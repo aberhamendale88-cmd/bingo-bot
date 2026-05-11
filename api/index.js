@@ -8,6 +8,7 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+require('./bot.js');
 // 1. MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB ተገናኝቷል!"))
