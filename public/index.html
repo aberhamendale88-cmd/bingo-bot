@@ -4,33 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Win Bingo</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { background-color: #1a1a1a; color: white; text-align: center; font-family: sans-serif; padding-top: 50px; }
+        .play-btn { background-color: #f39c12; border: none; padding: 15px 30px; font-size: 20px; border-radius: 10px; cursor: pointer; color: white; }
+    </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="auth-screen" class="screen">
-            <div class="auth-box">
-                <h2>WIN BINGO መግቢያ</h2>
-                <input type="tel" id="phone" placeholder="ስልክ ቁጥር">
-                <input type="password" id="password" placeholder="ፓስወርድ">
-                <button class="play-btn" onclick="handleAuth()">ግባ/ተመዝገብ</button>
-            </div>
-        </div>
+    <h1>እንኳን ወደ Win Bingo በደህና መጡ!</h1>
+    <p>ጨዋታውን ለመጀመር ዝግጁ ነዎት?</p>
+    <button class="play-btn">ቢንጎ ይጀምር!</button>
 
-        <div id="main-ui" style="display:none;">
-            <header>
-                <h2>WIN BINGO</h2>
-                <div class="wallet-bar">ባላንስ: <span id="balance-display">0</span> ETB</div>
-            </header>
-            <main id="game-content">
-                <div class="welcome-box">
-                    <button class="play-btn" onclick="startBooking()">PLAY 10 ETB</button>
-                    <button class="action-btn" onclick="showWallet()">WALLET</button>
-                </div>
-            </main>
-        </div>
-    </div>
-    <script src="script.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        // ቴሌግራም አፑን እንዲያውቀው
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+    </script>
 </body>
 </html>
