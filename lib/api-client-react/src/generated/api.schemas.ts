@@ -19,6 +19,10 @@ export interface TopUpInput {
   amount: number;
 }
 
+export interface SetNameInput {
+  name: string;
+}
+
 export type TransactionType =
   (typeof TransactionType)[keyof typeof TransactionType];
 

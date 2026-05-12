@@ -59,6 +59,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Wallet"
 
+  /wallet/setname:
+    post:
+      operationId: setPlayerName
+      tags: [wallet]
+      summary: Update the player's display name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetNameInput"
+      responses:
+        "200":
+          description: Updated wallet info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
   /wallet/history:
     get:
       operationId: getWalletHistory
@@ -154,6 +173,13 @@ components:
       properties:
         amount:
           type: number
+
+    SetNameInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
 
     Transaction:
       type: object

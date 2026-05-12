@@ -37,6 +37,19 @@ export const TopUpWalletResponse = zod.object({
 });
 
 /**
+ * @summary Update the player's display name
+ */
+export const SetPlayerNameBody = zod.object({
+  name: zod.string(),
+});
+
+export const SetPlayerNameResponse = zod.object({
+  id: zod.number(),
+  balance: zod.number(),
+  currency: zod.string(),
+});
+
+/**
  * @summary Get wallet transaction history
  */
 export const GetWalletHistoryResponseItem = zod.object({

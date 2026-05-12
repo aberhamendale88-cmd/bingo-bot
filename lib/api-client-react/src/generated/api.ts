@@ -22,6 +22,7 @@ import type {
   HealthStatus,
   JoinResult,
   LeaderboardEntry,
+  SetNameInput,
   TopUpInput,
   Transaction,
   Wallet,
@@ -260,6 +261,92 @@ export const useTopUpWallet = <
   TContext
 > => {
   return useMutation(getTopUpWalletMutationOptions(options));
+};
+
+/**
+ * @summary Update the player's display name
+ */
+export const getSetPlayerNameUrl = () => {
+  return `/api/wallet/setname`;
+};
+
+export const setPlayerName = async (
+  setNameInput: SetNameInput,
+  options?: RequestInit,
+): Promise<Wallet> => {
+  return customFetch<Wallet>(getSetPlayerNameUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(setNameInput),
+  });
+};
+
+export const getSetPlayerNameMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setPlayerName>>,
+    TError,
+    { data: BodyType<SetNameInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setPlayerName>>,
+  TError,
+  { data: BodyType<SetNameInput> },
+  TContext
+> => {
+  const mutationKey = ["setPlayerName"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setPlayerName>>,
+    { data: BodyType<SetNameInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return setPlayerName(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetPlayerNameMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setPlayerName>>
+>;
+export type SetPlayerNameMutationBody = BodyType<SetNameInput>;
+export type SetPlayerNameMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update the player's display name
+ */
+export const useSetPlayerName = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setPlayerName>>,
+    TError,
+    { data: BodyType<SetNameInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setPlayerName>>,
+  TError,
+  { data: BodyType<SetNameInput> },
+  TContext
+> => {
+  return useMutation(getSetPlayerNameMutationOptions(options));
 };
 
 /**

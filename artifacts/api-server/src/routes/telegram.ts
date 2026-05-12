@@ -8,6 +8,14 @@ const router = Router();
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
 
+async function sendMessage(chatId: number | string, text: string, extra?: object) {
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text, ...extra }),
+  });
+}
+
 function verifyTelegramInitData(initData: string): Record<string, string> | null {
   try {
     const params = new URLSearchParams(initData);
@@ -40,24 +48,52 @@ router.post("/webhook", async (req, res) => {
     req.log.info({ update_type: Object.keys(update).find(k => k !== "update_id") }, "Telegram update received");
 
     const message = update.message || update.channel_post;
-    if (message?.text === "/start" || message?.text?.startsWith("/start ")) {
-      const chatId = message.chat.id;
-      const firstName = message.from?.first_name ?? "Player";
+    if (!message) {
+      res.json({ ok: true });
+      return;
+    }
 
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: `Welcome to Win Bingo, ${firstName}! Tap the button below to play.`,
-          reply_markup: {
-            inline_keyboard: [[{
-              text: "Play Win Bingo",
-              web_app: { url: `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}` }
-            }]]
-          }
-        })
+    const chatId = message.chat.id;
+    const text: string = message.text ?? "";
+    const firstName = message.from?.first_name ?? "Player";
+
+    if (text === "/start" || text.startsWith("/start ")) {
+      const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
+      await sendMessage(chatId, `Welcome to Win Bingo, ${firstName}! Tap the button below to play.`, {
+        reply_markup: {
+          inline_keyboard: [[{
+            text: "Play Win Bingo",
+            web_app: { url: `https://${domain}` },
+          }]],
+        },
       });
+    } else if (text === "/setname" || text.startsWith("/setname ")) {
+      const parts = text.split(" ").slice(1);
+      const newName = parts.join(" ").trim();
+
+      if (!newName) {
+        await sendMessage(chatId, "Usage: /setname YourName\n\nExample: /setname LuckyPlayer88");
+      } else if (newName.length < 2) {
+        await sendMessage(chatId, "Name must be at least 2 characters long. Try again.");
+      } else if (newName.length > 30) {
+        await sendMessage(chatId, "Name must be 30 characters or fewer. Try a shorter name.");
+      } else {
+        const [wallet] = await db.select().from(walletsTable).limit(1);
+        if (wallet) {
+          await db.update(walletsTable).set({ playerName: newName }).where(eq(walletsTable.id, wallet.id));
+          req.log.info({ newName }, "Player name updated via /setname");
+          await sendMessage(chatId, `Done! Your display name is now: ${newName}`);
+        } else {
+          await sendMessage(chatId, "No account found. Open the game first, then try again.");
+        }
+      }
+    } else if (text === "/help") {
+      await sendMessage(chatId,
+        "Win Bingo Commands:\n\n" +
+        "/start — Open the game\n" +
+        "/setname <name> — Change your display name\n" +
+        "/help — Show this help message"
+      );
     }
 
     res.json({ ok: true });
@@ -89,9 +125,7 @@ router.post("/auth", async (req, res) => {
       return;
     }
 
-    const playerName = user.username
-      ? `@${user.username}`
-      : user.first_name;
+    const playerName = user.username ? `@${user.username}` : user.first_name;
 
     const existing = await db.select().from(walletsTable).limit(1);
     if (existing.length > 0) {
@@ -114,14 +148,27 @@ router.get("/setup-webhook", async (req, res) => {
       return;
     }
     const webhookUrl = `https://${domain}/api/telegram/webhook`;
-    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
+    const tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: webhookUrl, allowed_updates: ["message", "callback_query"] })
+      body: JSON.stringify({ url: webhookUrl, allowed_updates: ["message", "callback_query"] }),
     });
-    const data = await response.json() as unknown;
-    logger.info({ data }, "Webhook setup result");
-    res.json(data);
+    const tgData = await tgRes.json() as unknown;
+
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setMyCommands`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        commands: [
+          { command: "start", description: "Open Win Bingo" },
+          { command: "setname", description: "Change your display name" },
+          { command: "help", description: "Show all commands" },
+        ],
+      }),
+    });
+
+    logger.info({ tgData }, "Webhook + commands setup result");
+    res.json(tgData);
   } catch (err) {
     req.log.error({ err }, "Webhook setup error");
     res.status(500).json({ error: "Setup failed" });

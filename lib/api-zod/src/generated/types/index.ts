@@ -12,6 +12,7 @@ export * from "./gameStateStatus";
 export * from "./healthStatus";
 export * from "./joinResult";
 export * from "./leaderboardEntry";
+export * from "./setNameInput";
 export * from "./topUpInput";
 export * from "./transaction";
 export * from "./transactionType";

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, walletsTable, transactionsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { TopUpWalletBody } from "@workspace/api-zod";
+import { TopUpWalletBody, SetPlayerNameBody } from "@workspace/api-zod";
 
 const router = Router();
 
@@ -55,6 +55,33 @@ router.post("/topup", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Failed to top up wallet");
     res.status(500).json({ error: "Failed to top up" });
+  }
+});
+
+router.post("/setname", async (req, res) => {
+  try {
+    const parsed = SetPlayerNameBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid name" });
+      return;
+    }
+    const { name } = parsed.data;
+    const trimmed = name.trim();
+    if (trimmed.length < 2) {
+      res.status(400).json({ error: "Name must be at least 2 characters" });
+      return;
+    }
+    if (trimmed.length > 30) {
+      res.status(400).json({ error: "Name must be 30 characters or fewer" });
+      return;
+    }
+    const wallet = await ensureWallet();
+    await db.update(walletsTable).set({ playerName: trimmed }).where(eq(walletsTable.id, wallet.id));
+    req.log.info({ playerName: trimmed }, "Player name updated via in-app setname");
+    res.json({ id: wallet.id, balance: parseFloat(wallet.balance), currency: wallet.currency });
+  } catch (err) {
+    req.log.error({ err }, "Failed to set player name");
+    res.status(500).json({ error: "Failed to update name" });
   }
 });
 
