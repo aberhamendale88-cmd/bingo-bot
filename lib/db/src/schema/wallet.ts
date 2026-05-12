@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const walletsTable = pgTable("wallets", {
   id: serial("id").primaryKey(),
+  telegramId: text("telegram_id"),
   playerName: text("player_name").notNull().default("Player"),
   balance: numeric("balance", { precision: 10, scale: 2 }).notNull().default("500"),
   currency: text("currency").notNull().default("ETB"),

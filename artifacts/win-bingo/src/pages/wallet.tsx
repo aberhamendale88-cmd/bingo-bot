@@ -25,7 +25,7 @@ export function Wallet() {
   const [nameInput, setNameInput] = useState("");
 
   const { data: wallet, isLoading: isWalletLoading } = useGetWallet({
-    query: { queryKey: getGetWalletQueryKey() },
+    query: { queryKey: getGetWalletQueryKey(), refetchInterval: 10000 },
   });
 
   const { data: history, isLoading: isHistoryLoading } = useGetWalletHistory({
@@ -52,8 +52,10 @@ export function Wallet() {
     );
   };
 
+  const displayName = (wallet as any)?.playerName ?? telegramName ?? "Player";
+
   const handleStartEditName = () => {
-    setNameInput(telegramName ?? "");
+    setNameInput(displayName);
     setIsEditingName(true);
   };
 
@@ -118,6 +120,7 @@ export function Wallet() {
                 }}
                 autoFocus
               />
+
               <Button
                 data-testid="button-save-name"
                 size="sm"
@@ -147,7 +150,7 @@ export function Wallet() {
                 data-testid="text-display-name"
                 className="font-mono font-bold text-base text-foreground"
               >
-                {telegramName ?? "Player"}
+                {displayName}
               </span>
               <Button
                 data-testid="button-edit-name"

@@ -5,24 +5,40 @@ import { TopUpWalletBody, SetPlayerNameBody } from "@workspace/api-zod";
 
 const router = Router();
 
-const DEFAULT_WALLET_ID = 1;
+function getWalletId(req: any): number {
+  const header = req.headers["x-wallet-id"];
+  const id = parseInt(String(header ?? ""), 10);
+  return isNaN(id) ? 1 : id;
+}
 
-async function ensureWallet() {
-  const existing = await db.select().from(walletsTable).where(eq(walletsTable.id, DEFAULT_WALLET_ID)).limit(1);
-  if (existing.length === 0) {
-    await db.insert(walletsTable).values({ playerName: "Player", balance: "500", currency: "ETB" });
+async function ensureWallet(walletId: number) {
+  const existing = await db.select().from(walletsTable).where(eq(walletsTable.id, walletId)).limit(1);
+  if (existing.length > 0) return existing[0];
+
+  if (walletId === 1) {
+    const [created] = await db
+      .insert(walletsTable)
+      .values({ playerName: "Player", balance: "500", currency: "ETB" })
+      .returning();
+    return created;
   }
-  const [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.id, DEFAULT_WALLET_ID)).limit(1);
-  return wallet;
+
+  return null;
 }
 
 router.get("/", async (req, res) => {
   try {
-    const wallet = await ensureWallet();
+    const walletId = getWalletId(req);
+    const wallet = await ensureWallet(walletId);
+    if (!wallet) {
+      res.status(404).json({ error: "Wallet not found" });
+      return;
+    }
     res.json({
       id: wallet.id,
       balance: parseFloat(wallet.balance),
       currency: wallet.currency,
+      playerName: wallet.playerName,
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get wallet");
@@ -42,7 +58,12 @@ router.post("/topup", async (req, res) => {
       res.status(400).json({ error: "Amount must be positive" });
       return;
     }
-    const wallet = await ensureWallet();
+    const walletId = getWalletId(req);
+    const wallet = await ensureWallet(walletId);
+    if (!wallet) {
+      res.status(404).json({ error: "Wallet not found" });
+      return;
+    }
     const newBalance = parseFloat(wallet.balance) + amount;
     await db.update(walletsTable).set({ balance: newBalance.toString() }).where(eq(walletsTable.id, wallet.id));
     await db.insert(transactionsTable).values({
@@ -75,9 +96,14 @@ router.post("/setname", async (req, res) => {
       res.status(400).json({ error: "Name must be 30 characters or fewer" });
       return;
     }
-    const wallet = await ensureWallet();
+    const walletId = getWalletId(req);
+    const wallet = await ensureWallet(walletId);
+    if (!wallet) {
+      res.status(404).json({ error: "Wallet not found" });
+      return;
+    }
     await db.update(walletsTable).set({ playerName: trimmed }).where(eq(walletsTable.id, wallet.id));
-    req.log.info({ playerName: trimmed }, "Player name updated via in-app setname");
+    req.log.info({ playerName: trimmed, walletId }, "Player name updated");
     res.json({ id: wallet.id, balance: parseFloat(wallet.balance), currency: wallet.currency });
   } catch (err) {
     req.log.error({ err }, "Failed to set player name");
@@ -87,7 +113,12 @@ router.post("/setname", async (req, res) => {
 
 router.get("/history", async (req, res) => {
   try {
-    const wallet = await ensureWallet();
+    const walletId = getWalletId(req);
+    const wallet = await ensureWallet(walletId);
+    if (!wallet) {
+      res.json([]);
+      return;
+    }
     const txns = await db
       .select()
       .from(transactionsTable)

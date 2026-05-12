@@ -17,6 +17,22 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _extraHeaders: Record<string, string> | null = null;
+
+/**
+ * Set extra headers that are merged into every outgoing request.
+ * Pass `null` to clear all extra headers.
+ */
+export function setExtraHeaders(headers: Record<string, string> | null): void {
+  _extraHeaders = headers;
+}
+
+/**
+ * Merge a single key/value into the extra headers object.
+ */
+export function setExtraHeader(key: string, value: string): void {
+  _extraHeaders = { ...(_extraHeaders ?? {}), [key]: value };
+}
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -335,7 +351,11 @@ export async function customFetch<T = unknown>(
     throw new TypeError(`customFetch: ${method} requests cannot have a body.`);
   }
 
-  const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, headersInit);
+  const headers = mergeHeaders(
+    isRequest(input) ? input.headers : undefined,
+    _extraHeaders ?? undefined,
+    headersInit,
+  );
 
   if (
     typeof init.body === "string" &&

@@ -57,6 +57,7 @@ export function Game() {
       const t = setTimeout(() => setFlashNumber(null), 1000);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [gameState?.lastCalledNumber]);
 
   return (

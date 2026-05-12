@@ -3,11 +3,16 @@ import { db, walletsTable, gamesTable, gamePlayersTable, leaderboardTable, trans
 import { eq, desc, and } from "drizzle-orm";
 
 const router = Router();
-const DEFAULT_WALLET_ID = 1;
 const ENTRY_FEE = 10;
 const CALL_INTERVAL_MS = 30000;
 const TOTAL_NUMBERS = 500;
 const CARD_SIZE = 25;
+
+function getWalletId(req: any): number {
+  const header = req.headers["x-wallet-id"];
+  const id = parseInt(String(header ?? ""), 10);
+  return isNaN(id) ? 1 : id;
+}
 
 function generateCardNumbers(): number[] {
   const nums = Array.from({ length: TOTAL_NUMBERS }, (_, i) => i + 1);
@@ -35,14 +40,12 @@ async function getOrCreateActiveGame() {
   return game;
 }
 
-async function advanceGame() {
-  const game = await db
+async function advanceGame(gameId: number) {
+  const [game] = await db
     .select()
     .from(gamesTable)
-    .where(eq(gamesTable.status, "playing"))
-    .orderBy(desc(gamesTable.updatedAt))
-    .limit(1)
-    .then((r) => r[0]);
+    .where(and(eq(gamesTable.id, gameId), eq(gamesTable.status, "playing")))
+    .limit(1);
 
   if (!game) return;
 
@@ -108,6 +111,7 @@ async function advanceGame() {
       await db.update(leaderboardTable).set({
         wins: existing[0].wins + 1,
         totalEarnings: existing[0].totalEarnings + prize,
+        playerName: winnerName ?? "Player",
       }).where(eq(leaderboardTable.walletId, winnerId));
     } else {
       await db.insert(leaderboardTable).values({
@@ -119,7 +123,9 @@ async function advanceGame() {
     }
 
     setTimeout(() => {
-      db.insert(gamesTable).values({ status: "lobby", calledNumbers: "[]", prizePool: 0, entryFee: ENTRY_FEE, playerCount: 0 }).then(() => {});
+      db.insert(gamesTable)
+        .values({ status: "lobby", calledNumbers: "[]", prizePool: 0, entryFee: ENTRY_FEE, playerCount: 0 })
+        .catch(() => {});
     }, 5000);
   } else {
     await db.update(gamesTable).set({
@@ -128,27 +134,19 @@ async function advanceGame() {
       nextCallAt,
     }).where(eq(gamesTable.id, game.id));
 
-    setTimeout(advanceGame, CALL_INTERVAL_MS);
+    setTimeout(() => advanceGame(gameId), CALL_INTERVAL_MS);
   }
 }
 
 router.get("/state", async (req, res) => {
   try {
-    const game = await getOrCreateActiveGame()
-      .catch(async () => {
-        const playing = await db.select().from(gamesTable)
-          .where(eq(gamesTable.status, "playing"))
-          .orderBy(desc(gamesTable.updatedAt))
-          .limit(1);
-        return playing[0] ?? null;
-      });
-
-    const allActive = await db.select().from(gamesTable)
+    const playing = await db.select().from(gamesTable)
       .where(eq(gamesTable.status, "playing"))
       .orderBy(desc(gamesTable.updatedAt))
       .limit(1);
 
-    const activeGame = allActive[0] ?? game;
+    const activeGame = playing[0] ?? await getOrCreateActiveGame();
+
     if (!activeGame) {
       res.status(404).json({ error: "No game found" });
       return;
@@ -182,9 +180,10 @@ router.get("/state", async (req, res) => {
 
 router.post("/join", async (req, res) => {
   try {
+    const walletId = getWalletId(req);
     const game = await getOrCreateActiveGame();
 
-    const [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.id, DEFAULT_WALLET_ID)).limit(1);
+    const [wallet] = await db.select().from(walletsTable).where(eq(walletsTable.id, walletId)).limit(1);
     if (!wallet) {
       res.status(404).json({ success: false, message: "Wallet not found", wallet: { id: 0, balance: 0, currency: "ETB" } });
       return;
@@ -224,10 +223,14 @@ router.post("/join", async (req, res) => {
 
     const newPrizePool = game.prizePool + ENTRY_FEE;
     const newPlayerCount = (game.playerCount ?? 0) + 1;
-    await db.update(gamesTable).set({ prizePool: newPrizePool, playerCount: newPlayerCount, status: "playing", nextCallAt: new Date(Date.now() + CALL_INTERVAL_MS) })
-      .where(eq(gamesTable.id, game.id));
+    await db.update(gamesTable).set({
+      prizePool: newPrizePool,
+      playerCount: newPlayerCount,
+      status: "playing",
+      nextCallAt: new Date(Date.now() + CALL_INTERVAL_MS),
+    }).where(eq(gamesTable.id, game.id));
 
-    setTimeout(advanceGame, CALL_INTERVAL_MS);
+    setTimeout(() => advanceGame(game.id), CALL_INTERVAL_MS);
 
     res.json({
       success: true,
@@ -242,6 +245,8 @@ router.post("/join", async (req, res) => {
 
 router.get("/card", async (req, res) => {
   try {
+    const walletId = getWalletId(req);
+
     const playingGame = await db.select().from(gamesTable)
       .where(eq(gamesTable.status, "playing"))
       .orderBy(desc(gamesTable.updatedAt))
@@ -259,7 +264,7 @@ router.get("/card", async (req, res) => {
     }
 
     const [player] = await db.select().from(gamePlayersTable)
-      .where(and(eq(gamePlayersTable.gameId, game.id), eq(gamePlayersTable.walletId, DEFAULT_WALLET_ID)))
+      .where(and(eq(gamePlayersTable.gameId, game.id), eq(gamePlayersTable.walletId, walletId)))
       .limit(1);
 
     if (!player) {

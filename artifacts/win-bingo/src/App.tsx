@@ -10,15 +10,18 @@ import { Leaderboard } from "@/pages/leaderboard";
 import { Admin } from "@/pages/admin";
 import { useEffect, useState, createContext, useContext } from "react";
 import { isTelegramApp, telegramReady, getTelegramDisplayName } from "@/lib/telegram";
+import { setExtraHeader } from "@workspace/api-client-react";
 
 interface TelegramContextValue {
   playerName: string | null;
+  walletId: number | null;
   isFromTelegram: boolean;
   setPlayerName: (name: string) => void;
 }
 
 const TelegramContext = createContext<TelegramContextValue>({
   playerName: null,
+  walletId: null,
   isFromTelegram: false,
   setPlayerName: () => {},
 });
@@ -35,37 +38,43 @@ const queryClient = new QueryClient({
 
 function TelegramProvider({ children }: { children: React.ReactNode }) {
   const [playerName, setPlayerName] = useState<string | null>(null);
+  const [walletId, setWalletId] = useState<number | null>(null);
   const [isFromTelegram] = useState(() => isTelegramApp());
 
   useEffect(() => {
     document.documentElement.classList.add("dark");
 
-    if (!isTelegramApp()) return;
-    telegramReady();
+    if (isTelegramApp()) {
+      telegramReady();
 
-    const displayName = getTelegramDisplayName();
-    if (displayName) setPlayerName(displayName);
+      const displayName = getTelegramDisplayName();
+      if (displayName) setPlayerName(displayName);
 
-    const initData = window.Telegram?.WebApp?.initData;
-    if (!initData) return;
-
-    fetch("/api/telegram/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initData }),
-    })
-      .then((r) => r.json())
-      .then((data: { ok?: boolean; playerName?: string }) => {
-        if (data.ok && data.playerName) {
-          setPlayerName(data.playerName);
-          queryClient.invalidateQueries();
-        }
-      })
-      .catch(() => {});
+      const initData = window.Telegram?.WebApp?.initData;
+      if (initData) {
+        fetch("/api/telegram/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ initData }),
+        })
+          .then((r) => r.json())
+          .then((data: { ok?: boolean; playerName?: string; walletId?: number }) => {
+            if (data.ok) {
+              if (data.playerName) setPlayerName(data.playerName);
+              if (data.walletId) {
+                setWalletId(data.walletId);
+                setExtraHeader("x-wallet-id", String(data.walletId));
+                queryClient.invalidateQueries();
+              }
+            }
+          })
+          .catch(() => {});
+      }
+    }
   }, []);
 
   return (
-    <TelegramContext.Provider value={{ playerName, isFromTelegram, setPlayerName }}>
+    <TelegramContext.Provider value={{ playerName, walletId, isFromTelegram, setPlayerName }}>
       {children}
     </TelegramContext.Provider>
   );
