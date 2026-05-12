@@ -5,7 +5,7 @@
   "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
-    "build": "echo 'No build step needed'",
+    "build": "mkdir public",
     "dev": "nodemon api/index.js"
   },
   "dependencies": {
