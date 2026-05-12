@@ -7,7 +7,19 @@ import { Layout } from "@/components/layout";
 import { Game } from "@/pages/game";
 import { Wallet } from "@/pages/wallet";
 import { Leaderboard } from "@/pages/leaderboard";
-import { useEffect } from "react";
+import { useEffect, useState, createContext, useContext } from "react";
+import { isTelegramApp, telegramReady, getTelegramDisplayName } from "@/lib/telegram";
+
+interface TelegramContextValue {
+  playerName: string | null;
+  isFromTelegram: boolean;
+}
+
+const TelegramContext = createContext<TelegramContextValue>({ playerName: null, isFromTelegram: false });
+
+export function useTelegramContext() {
+  return useContext(TelegramContext);
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,6 +29,45 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function TelegramProvider({ children }: { children: React.ReactNode }) {
+  const [playerName, setPlayerName] = useState<string | null>(null);
+  const [isFromTelegram] = useState(() => isTelegramApp());
+
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+
+    if (!isTelegramApp()) return;
+
+    telegramReady();
+
+    const displayName = getTelegramDisplayName();
+    if (displayName) setPlayerName(displayName);
+
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
+
+    fetch("/api/telegram/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData }),
+    })
+      .then((r) => r.json())
+      .then((data: { ok?: boolean; playerName?: string }) => {
+        if (data.ok && data.playerName) {
+          setPlayerName(data.playerName);
+          queryClient.invalidateQueries();
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <TelegramContext.Provider value={{ playerName, isFromTelegram }}>
+      {children}
+    </TelegramContext.Provider>
+  );
+}
 
 function Router() {
   return (
@@ -32,17 +83,15 @@ function Router() {
 }
 
 function App() {
-  useEffect(() => {
-    document.documentElement.classList.add("dark");
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
+        <TelegramProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TelegramProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
