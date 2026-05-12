@@ -109,3 +109,108 @@ export const GetLeaderboardResponseItem = zod.object({
   totalEarnings: zod.number(),
 });
 export const GetLeaderboardResponse = zod.array(GetLeaderboardResponseItem);
+
+/**
+ * @summary Admin login
+ */
+export const AdminLoginBody = zod.object({
+  password: zod.string(),
+});
+
+export const AdminLoginResponse = zod.object({
+  ok: zod.boolean(),
+  error: zod.string().optional(),
+});
+
+/**
+ * @summary List all players with balances
+ */
+export const AdminListPlayersResponseItem = zod.object({
+  id: zod.number(),
+  playerName: zod.string(),
+  balance: zod.number(),
+  currency: zod.string(),
+  wins: zod.number(),
+  totalEarnings: zod.number(),
+  createdAt: zod.string(),
+});
+export const AdminListPlayersResponse = zod.array(AdminListPlayersResponseItem);
+
+/**
+ * @summary Credit ETB to a player wallet
+ */
+export const AdminCreditPlayerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminCreditPlayerBody = zod.object({
+  amount: zod.number(),
+  reason: zod.string(),
+});
+
+export const AdminCreditPlayerResponse = zod.object({
+  id: zod.number(),
+  playerName: zod.string(),
+  balance: zod.number(),
+  currency: zod.string(),
+  wins: zod.number(),
+  totalEarnings: zod.number(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Debit ETB from a player wallet
+ */
+export const AdminDebitPlayerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminDebitPlayerBody = zod.object({
+  amount: zod.number(),
+  reason: zod.string(),
+});
+
+export const AdminDebitPlayerResponse = zod.object({
+  id: zod.number(),
+  playerName: zod.string(),
+  balance: zod.number(),
+  currency: zod.string(),
+  wins: zod.number(),
+  totalEarnings: zod.number(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Rename a player
+ */
+export const AdminRenamePlayerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminRenamePlayerBody = zod.object({
+  name: zod.string(),
+});
+
+export const AdminRenamePlayerResponse = zod.object({
+  id: zod.number(),
+  playerName: zod.string(),
+  balance: zod.number(),
+  currency: zod.string(),
+  wins: zod.number(),
+  totalEarnings: zod.number(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary List recent games
+ */
+export const AdminListGamesResponseItem = zod.object({
+  id: zod.number(),
+  status: zod.string(),
+  playerCount: zod.number(),
+  prizePool: zod.number(),
+  entryFee: zod.number(),
+  winnerName: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+export const AdminListGamesResponse = zod.array(AdminListGamesResponseItem);

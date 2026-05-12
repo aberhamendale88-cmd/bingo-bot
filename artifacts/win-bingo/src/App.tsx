@@ -7,15 +7,21 @@ import { Layout } from "@/components/layout";
 import { Game } from "@/pages/game";
 import { Wallet } from "@/pages/wallet";
 import { Leaderboard } from "@/pages/leaderboard";
+import { Admin } from "@/pages/admin";
 import { useEffect, useState, createContext, useContext } from "react";
 import { isTelegramApp, telegramReady, getTelegramDisplayName } from "@/lib/telegram";
 
 interface TelegramContextValue {
   playerName: string | null;
   isFromTelegram: boolean;
+  setPlayerName: (name: string) => void;
 }
 
-const TelegramContext = createContext<TelegramContextValue>({ playerName: null, isFromTelegram: false });
+const TelegramContext = createContext<TelegramContextValue>({
+  playerName: null,
+  isFromTelegram: false,
+  setPlayerName: () => {},
+});
 
 export function useTelegramContext() {
   return useContext(TelegramContext);
@@ -23,10 +29,7 @@ export function useTelegramContext() {
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
+    queries: { retry: 1, refetchOnWindowFocus: false },
   },
 });
 
@@ -38,7 +41,6 @@ function TelegramProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.classList.add("dark");
 
     if (!isTelegramApp()) return;
-
     telegramReady();
 
     const displayName = getTelegramDisplayName();
@@ -63,13 +65,13 @@ function TelegramProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <TelegramContext.Provider value={{ playerName, isFromTelegram }}>
+    <TelegramContext.Provider value={{ playerName, isFromTelegram, setPlayerName }}>
       {children}
     </TelegramContext.Provider>
   );
 }
 
-function Router() {
+function PlayerRouter() {
   return (
     <Layout>
       <Switch>
@@ -88,7 +90,10 @@ function App() {
       <TooltipProvider>
         <TelegramProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
+            <Switch>
+              <Route path="/admin" component={Admin} />
+              <Route component={PlayerRouter} />
+            </Switch>
           </WouterRouter>
           <Toaster />
         </TelegramProvider>

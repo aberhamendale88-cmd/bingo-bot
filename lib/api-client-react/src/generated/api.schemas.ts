@@ -5,6 +5,41 @@
  * Win Bingo API
  * OpenAPI spec version: 0.1.0
  */
+export interface AdminLoginInput {
+  password: string;
+}
+
+export interface AdminLoginResult {
+  ok: boolean;
+  error?: string;
+}
+
+export interface AdminPlayer {
+  id: number;
+  playerName: string;
+  balance: number;
+  currency: string;
+  wins: number;
+  totalEarnings: number;
+  createdAt: string;
+}
+
+export interface AdminAdjustInput {
+  amount: number;
+  reason: string;
+}
+
+export interface AdminGame {
+  id: number;
+  status: string;
+  playerCount: number;
+  prizePool: number;
+  entryFee: number;
+  /** @nullable */
+  winnerName?: string | null;
+  createdAt: string;
+}
+
 export interface HealthStatus {
   status: string;
 }

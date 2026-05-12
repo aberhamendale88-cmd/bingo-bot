@@ -6,6 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./adminAdjustInput";
+export * from "./adminGame";
+export * from "./adminLoginInput";
+export * from "./adminLoginResult";
+export * from "./adminPlayer";
 export * from "./bingoCard";
 export * from "./gameState";
 export * from "./gameStateStatus";

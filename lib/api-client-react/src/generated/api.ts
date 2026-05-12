@@ -17,6 +17,11 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AdminAdjustInput,
+  AdminGame,
+  AdminLoginInput,
+  AdminLoginResult,
+  AdminPlayer,
   BingoCard,
   GameState,
   HealthStatus,
@@ -720,6 +725,503 @@ export function useGetLeaderboard<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetLeaderboardQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Admin login
+ */
+export const getAdminLoginUrl = () => {
+  return `/api/admin/login`;
+};
+
+export const adminLogin = async (
+  adminLoginInput: AdminLoginInput,
+  options?: RequestInit,
+): Promise<AdminLoginResult> => {
+  return customFetch<AdminLoginResult>(getAdminLoginUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminLoginInput),
+  });
+};
+
+export const getAdminLoginMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminLogin>>,
+    TError,
+    { data: BodyType<AdminLoginInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminLogin>>,
+  TError,
+  { data: BodyType<AdminLoginInput> },
+  TContext
+> => {
+  const mutationKey = ["adminLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminLogin>>,
+    { data: BodyType<AdminLoginInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminLogin(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminLogin>>
+>;
+export type AdminLoginMutationBody = BodyType<AdminLoginInput>;
+export type AdminLoginMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Admin login
+ */
+export const useAdminLogin = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminLogin>>,
+    TError,
+    { data: BodyType<AdminLoginInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminLogin>>,
+  TError,
+  { data: BodyType<AdminLoginInput> },
+  TContext
+> => {
+  return useMutation(getAdminLoginMutationOptions(options));
+};
+
+/**
+ * @summary List all players with balances
+ */
+export const getAdminListPlayersUrl = () => {
+  return `/api/admin/players`;
+};
+
+export const adminListPlayers = async (
+  options?: RequestInit,
+): Promise<AdminPlayer[]> => {
+  return customFetch<AdminPlayer[]>(getAdminListPlayersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListPlayersQueryKey = () => {
+  return [`/api/admin/players`] as const;
+};
+
+export const getAdminListPlayersQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListPlayers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListPlayers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListPlayersQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListPlayers>>
+  > = ({ signal }) => adminListPlayers({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListPlayers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListPlayersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListPlayers>>
+>;
+export type AdminListPlayersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all players with balances
+ */
+
+export function useAdminListPlayers<
+  TData = Awaited<ReturnType<typeof adminListPlayers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListPlayers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListPlayersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Credit ETB to a player wallet
+ */
+export const getAdminCreditPlayerUrl = (id: number) => {
+  return `/api/admin/players/${id}/credit`;
+};
+
+export const adminCreditPlayer = async (
+  id: number,
+  adminAdjustInput: AdminAdjustInput,
+  options?: RequestInit,
+): Promise<AdminPlayer> => {
+  return customFetch<AdminPlayer>(getAdminCreditPlayerUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminAdjustInput),
+  });
+};
+
+export const getAdminCreditPlayerMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreditPlayer>>,
+    TError,
+    { id: number; data: BodyType<AdminAdjustInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreditPlayer>>,
+  TError,
+  { id: number; data: BodyType<AdminAdjustInput> },
+  TContext
+> => {
+  const mutationKey = ["adminCreditPlayer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreditPlayer>>,
+    { id: number; data: BodyType<AdminAdjustInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminCreditPlayer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreditPlayerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreditPlayer>>
+>;
+export type AdminCreditPlayerMutationBody = BodyType<AdminAdjustInput>;
+export type AdminCreditPlayerMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Credit ETB to a player wallet
+ */
+export const useAdminCreditPlayer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreditPlayer>>,
+    TError,
+    { id: number; data: BodyType<AdminAdjustInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreditPlayer>>,
+  TError,
+  { id: number; data: BodyType<AdminAdjustInput> },
+  TContext
+> => {
+  return useMutation(getAdminCreditPlayerMutationOptions(options));
+};
+
+/**
+ * @summary Debit ETB from a player wallet
+ */
+export const getAdminDebitPlayerUrl = (id: number) => {
+  return `/api/admin/players/${id}/debit`;
+};
+
+export const adminDebitPlayer = async (
+  id: number,
+  adminAdjustInput: AdminAdjustInput,
+  options?: RequestInit,
+): Promise<AdminPlayer> => {
+  return customFetch<AdminPlayer>(getAdminDebitPlayerUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminAdjustInput),
+  });
+};
+
+export const getAdminDebitPlayerMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDebitPlayer>>,
+    TError,
+    { id: number; data: BodyType<AdminAdjustInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDebitPlayer>>,
+  TError,
+  { id: number; data: BodyType<AdminAdjustInput> },
+  TContext
+> => {
+  const mutationKey = ["adminDebitPlayer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDebitPlayer>>,
+    { id: number; data: BodyType<AdminAdjustInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminDebitPlayer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDebitPlayerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDebitPlayer>>
+>;
+export type AdminDebitPlayerMutationBody = BodyType<AdminAdjustInput>;
+export type AdminDebitPlayerMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Debit ETB from a player wallet
+ */
+export const useAdminDebitPlayer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDebitPlayer>>,
+    TError,
+    { id: number; data: BodyType<AdminAdjustInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDebitPlayer>>,
+  TError,
+  { id: number; data: BodyType<AdminAdjustInput> },
+  TContext
+> => {
+  return useMutation(getAdminDebitPlayerMutationOptions(options));
+};
+
+/**
+ * @summary Rename a player
+ */
+export const getAdminRenamePlayerUrl = (id: number) => {
+  return `/api/admin/players/${id}/rename`;
+};
+
+export const adminRenamePlayer = async (
+  id: number,
+  setNameInput: SetNameInput,
+  options?: RequestInit,
+): Promise<AdminPlayer> => {
+  return customFetch<AdminPlayer>(getAdminRenamePlayerUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(setNameInput),
+  });
+};
+
+export const getAdminRenamePlayerMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRenamePlayer>>,
+    TError,
+    { id: number; data: BodyType<SetNameInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRenamePlayer>>,
+  TError,
+  { id: number; data: BodyType<SetNameInput> },
+  TContext
+> => {
+  const mutationKey = ["adminRenamePlayer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRenamePlayer>>,
+    { id: number; data: BodyType<SetNameInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminRenamePlayer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRenamePlayerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRenamePlayer>>
+>;
+export type AdminRenamePlayerMutationBody = BodyType<SetNameInput>;
+export type AdminRenamePlayerMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Rename a player
+ */
+export const useAdminRenamePlayer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRenamePlayer>>,
+    TError,
+    { id: number; data: BodyType<SetNameInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRenamePlayer>>,
+  TError,
+  { id: number; data: BodyType<SetNameInput> },
+  TContext
+> => {
+  return useMutation(getAdminRenamePlayerMutationOptions(options));
+};
+
+/**
+ * @summary List recent games
+ */
+export const getAdminListGamesUrl = () => {
+  return `/api/admin/games`;
+};
+
+export const adminListGames = async (
+  options?: RequestInit,
+): Promise<AdminGame[]> => {
+  return customFetch<AdminGame[]>(getAdminListGamesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListGamesQueryKey = () => {
+  return [`/api/admin/games`] as const;
+};
+
+export const getAdminListGamesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListGames>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListGames>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListGamesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListGames>>> = ({
+    signal,
+  }) => adminListGames({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListGames>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListGamesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListGames>>
+>;
+export type AdminListGamesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List recent games
+ */
+
+export function useAdminListGames<
+  TData = Awaited<ReturnType<typeof adminListGames>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListGames>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListGamesQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

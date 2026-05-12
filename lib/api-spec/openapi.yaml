@@ -147,8 +147,196 @@ paths:
                 items:
                   $ref: "#/components/schemas/LeaderboardEntry"
 
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginInput"
+      responses:
+        "200":
+          description: Login result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLoginResult"
+
+  /admin/players:
+    get:
+      operationId: adminListPlayers
+      tags: [admin]
+      summary: List all players with balances
+      responses:
+        "200":
+          description: Player list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminPlayer"
+
+  /admin/players/{id}/credit:
+    post:
+      operationId: adminCreditPlayer
+      tags: [admin]
+      summary: Credit ETB to a player wallet
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAdjustInput"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPlayer"
+
+  /admin/players/{id}/debit:
+    post:
+      operationId: adminDebitPlayer
+      tags: [admin]
+      summary: Debit ETB from a player wallet
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAdjustInput"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPlayer"
+
+  /admin/players/{id}/rename:
+    post:
+      operationId: adminRenamePlayer
+      tags: [admin]
+      summary: Rename a player
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetNameInput"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPlayer"
+
+  /admin/games:
+    get:
+      operationId: adminListGames
+      tags: [admin]
+      summary: List recent games
+      responses:
+        "200":
+          description: Game list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminGame"
+
 components:
   schemas:
+    AdminLoginInput:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+
+    AdminLoginResult:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+        error:
+          type: string
+
+    AdminPlayer:
+      type: object
+      required: [id, playerName, balance, currency, wins, totalEarnings, createdAt]
+      properties:
+        id:
+          type: integer
+        playerName:
+          type: string
+        balance:
+          type: number
+        currency:
+          type: string
+        wins:
+          type: integer
+        totalEarnings:
+          type: number
+        createdAt:
+          type: string
+
+    AdminAdjustInput:
+      type: object
+      required: [amount, reason]
+      properties:
+        amount:
+          type: number
+        reason:
+          type: string
+
+    AdminGame:
+      type: object
+      required: [id, status, playerCount, prizePool, entryFee, createdAt]
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        playerCount:
+          type: integer
+        prizePool:
+          type: number
+        entryFee:
+          type: number
+        winnerName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+
     HealthStatus:
       type: object
       required: [status]
