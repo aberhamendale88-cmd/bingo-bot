@@ -1,24 +1,4 @@
 {
-<<<<<<< HEAD
-  "name": "bingo-mini-app-bot",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "mongoose": "^9.6.2",
-    "telegraf": "^4.16.3"
-  }
-}
-=======
   "name": "win-bingo",
   "version": "1.0.0",
   "description": "Win Bingo Telegram Mini App",
@@ -37,4 +17,3 @@
     "node": "20.x"
   }
 }
->>>>>>> 8f2802354840113f4a2ff5a42ba8f2a42af398e6
