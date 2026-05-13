@@ -1,0 +1,453 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Win Bingo API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: wallet
+    description: Wallet operations
+  - name: game
+    description: Game operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /wallet:
+    get:
+      operationId: getWallet
+      tags: [wallet]
+      summary: Get wallet balance
+      responses:
+        "200":
+          description: Wallet info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/topup:
+    post:
+      operationId: topUpWallet
+      tags: [wallet]
+      summary: Top up wallet balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TopUpInput"
+      responses:
+        "200":
+          description: Updated wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/setname:
+    post:
+      operationId: setPlayerName
+      tags: [wallet]
+      summary: Update the player's display name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetNameInput"
+      responses:
+        "200":
+          description: Updated wallet info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/history:
+    get:
+      operationId: getWalletHistory
+      tags: [wallet]
+      summary: Get wallet transaction history
+      responses:
+        "200":
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /game/state:
+    get:
+      operationId: getGameState
+      tags: [game]
+      summary: Get current game state
+      responses:
+        "200":
+          description: Current game state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameState"
+
+  /game/join:
+    post:
+      operationId: joinGame
+      tags: [game]
+      summary: Join the current game lobby (deducts entry fee)
+      responses:
+        "200":
+          description: Joined game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinResult"
+
+  /game/card:
+    get:
+      operationId: getPlayerCard
+      tags: [game]
+      summary: Get the player's bingo card for current game
+      responses:
+        "200":
+          description: Player bingo card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BingoCard"
+
+  /game/leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [game]
+      summary: Get top winners leaderboard
+      responses:
+        "200":
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginInput"
+      responses:
+        "200":
+          description: Login result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLoginResult"
+
+  /admin/players:
+    get:
+      operationId: adminListPlayers
+      tags: [admin]
+      summary: List all players with balances
+      responses:
+        "200":
+          description: Player list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminPlayer"
+
+  /admin/players/{id}/credit:
+    post:
+      operationId: adminCreditPlayer
+      tags: [admin]
+      summary: Credit ETB to a player wallet
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAdjustInput"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPlayer"
+
+  /admin/players/{id}/debit:
+    post:
+      operationId: adminDebitPlayer
+      tags: [admin]
+      summary: Debit ETB from a player wallet
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAdjustInput"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPlayer"
+
+  /admin/players/{id}/rename:
+    post:
+      operationId: adminRenamePlayer
+      tags: [admin]
+      summary: Rename a player
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetNameInput"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPlayer"
+
+  /admin/games:
+    get:
+      operationId: adminListGames
+      tags: [admin]
+      summary: List recent games
+      responses:
+        "200":
+          description: Game list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminGame"
+
+components:
+  schemas:
+    AdminLoginInput:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+
+    AdminLoginResult:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+        error:
+          type: string
+
+    AdminPlayer:
+      type: object
+      required: [id, playerName, balance, currency, wins, totalEarnings, createdAt]
+      properties:
+        id:
+          type: integer
+        playerName:
+          type: string
+        balance:
+          type: number
+        currency:
+          type: string
+        wins:
+          type: integer
+        totalEarnings:
+          type: number
+        createdAt:
+          type: string
+
+    AdminAdjustInput:
+      type: object
+      required: [amount, reason]
+      properties:
+        amount:
+          type: number
+        reason:
+          type: string
+
+    AdminGame:
+      type: object
+      required: [id, status, playerCount, prizePool, entryFee, createdAt]
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        playerCount:
+          type: integer
+        prizePool:
+          type: number
+        entryFee:
+          type: number
+        winnerName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    Wallet:
+      type: object
+      required: [id, balance, currency]
+      properties:
+        id:
+          type: integer
+        balance:
+          type: number
+        currency:
+          type: string
+
+    TopUpInput:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+
+    SetNameInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    Transaction:
+      type: object
+      required: [id, type, amount, description, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [credit, debit]
+        amount:
+          type: number
+        description:
+          type: string
+        createdAt:
+          type: string
+
+    GameState:
+      type: object
+      required: [id, status, calledNumbers, nextCallIn, playerCount, prizePool, entryFee]
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          enum: [lobby, playing, finished]
+        calledNumbers:
+          type: array
+          items:
+            type: integer
+        nextCallIn:
+          type: integer
+        playerCount:
+          type: integer
+        prizePool:
+          type: number
+        entryFee:
+          type: number
+        lastCalledNumber:
+          type: ["integer", "null"]
+        winnerId:
+          type: ["integer", "null"]
+        winnerName:
+          type: ["string", "null"]
+
+    JoinResult:
+      type: object
+      required: [success, message, wallet]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        wallet:
+          $ref: "#/components/schemas/Wallet"
+
+    BingoCard:
+      type: object
+      required: [gameId, numbers, markedNumbers]
+      properties:
+        gameId:
+          type: integer
+        numbers:
+          type: array
+          items:
+            type: integer
+        markedNumbers:
+          type: array
+          items:
+            type: integer
+
+    LeaderboardEntry:
+      type: object
+      required: [rank, playerName, wins, totalEarnings]
+      properties:
+        rank:
+          type: integer
+        playerName:
+          type: string
+        wins:
+          type: integer
+        totalEarnings:
+          type: number
